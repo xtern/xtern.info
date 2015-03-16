@@ -1,4 +1,4 @@
-package info.xtern.management.monitoring;
+package info.xtern.common;
 
 public interface EventHandler<T> {
     

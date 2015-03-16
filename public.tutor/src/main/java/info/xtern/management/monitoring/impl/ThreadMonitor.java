@@ -3,7 +3,7 @@
  */
 package info.xtern.management.monitoring.impl;
 
-import info.xtern.management.monitoring.LifeCycle;
+import info.xtern.common.LifeCycle;
 import info.xtern.management.monitoring.TrackerController;
 
 /**

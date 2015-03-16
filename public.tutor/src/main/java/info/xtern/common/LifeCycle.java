@@ -1,7 +1,7 @@
 /**
  * 
  */
-package info.xtern.management.monitoring;
+package info.xtern.common;
 
 /**
  * @author stash

@@ -1,7 +1,7 @@
 package info.xtern.management.monitoring.impl;
 
-import info.xtern.management.monitoring.EventHandler;
-import info.xtern.management.monitoring.LifeCycle;
+import info.xtern.common.EventHandler;
+import info.xtern.common.LifeCycle;
 
 public class CurrentThreadTracker extends DelayQueueBasedTracker implements
         LifeCycle {
