@@ -4,10 +4,11 @@
 package info.xtern.management.monitoring.impl;
 
 /**
- * Базовая обертка объекта, реализующая hashcode/equals по long id, для удаления
- * объекта по id из очереди
+ * Wrapper implements hashCode/equals to allow identify object by long
+ * identifier 
  * 
  * @author sbt-pereslegin-pa
+ * @see java.lang.Long
  */
 public class Task {
     

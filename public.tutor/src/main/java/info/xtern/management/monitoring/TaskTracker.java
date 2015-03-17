@@ -6,7 +6,7 @@ package info.xtern.management.monitoring;
 import info.xtern.common.LifeCycle;
 
 /**
- * @author stash
+ * @author pereslegin-pa
  *
  */
 public interface TaskTracker<T> {
