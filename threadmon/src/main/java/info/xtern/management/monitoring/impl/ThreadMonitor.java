@@ -23,7 +23,6 @@ public class ThreadMonitor implements LifeCycle, Runnable {
     public ThreadMonitor(TrackerControllerSync taskTrackerController) {
         // bad style
         this.thread = new Thread(this, "Thread monitor");
-        this.thread.setDaemon(true);
         this.taskTrackerController = taskTrackerController;
     }
     
@@ -45,6 +44,7 @@ public class ThreadMonitor implements LifeCycle, Runnable {
      */
     @Override
     public void start() {
+        thread.setDaemon(true);
         thread.start();
     }
 
