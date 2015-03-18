@@ -129,7 +129,7 @@ public class TaskTrackerTest {
         latch.countDown();
         
         
-        // wait until all threads
+        // wait until all threads finished
         try {
             while (isSomeoneAlive(normal, hang))
                 TimeUnit.SECONDS.sleep(1);
