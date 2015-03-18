@@ -9,6 +9,7 @@ import info.xtern.management.monitoring.impl.TaskDelayed;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import org.junit.Test;
 
@@ -22,6 +23,8 @@ import org.junit.Test;
  */
 public class TaskTrackerTest {
     
+    private static final AtomicIntegerArray atomicArray = new AtomicIntegerArray(1000);
+    
     private class HangHandler implements EventHandler<TaskDelayed> {
 
         final AtomicInteger counter;
@@ -33,6 +36,7 @@ public class TaskTrackerTest {
         @Override
         public void onEvent(TaskDelayed t) {
             counter.incrementAndGet();
+            atomicArray.incrementAndGet( (int) t.getTaskId() );
         }
         
     }
@@ -141,6 +145,17 @@ public class TaskTrackerTest {
         assertEquals("Total unhang count must be " + THREADS_COUNT * MULTIPLIER, THREADS_COUNT * MULTIPLIER, totalUnhangCounter.get());
         
         assertEquals("Total hang count must be " + (THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER), (THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER) , totalhangCounter.get());
+
+        for (int i = 0; i < THREADS_COUNT; i++) {
+            // 
+            int id = (int)normal[i].getId();
+            assertEquals( "Task " + id + " should not hang", 0, atomicArray.get(id));
+        }
+        int hangPlusUnhangCount = (int) (MULTIPLIER * HANG_MULTIPLIER + MULTIPLIER) ;
+        for (int i = 0; i < THREADS_COUNT; i++) {
+            int id = (int)hang[i].getId();
+            assertEquals( "Task " + id + " should hang " + (MULTIPLIER * HANG_MULTIPLIER) + " and unhang for " + MULTIPLIER, hangPlusUnhangCount, atomicArray.get(id));
+        }
     }
 
 }
