@@ -122,15 +122,15 @@ public class TaskTrackerTest {
             normal[i].start();
             hang[i].start();
         }
-        // 1. starting monitoring thread
-        controller.start();
         
-        // 2. starting all threads
-        latch.countDown();
-        
-        
-        // wait until all threads
         try {
+            // 1. starting monitoring thread
+            controller.start();
+            
+            // 2. starting all threads
+            latch.countDown();
+            
+            // 3. awaiting threads termination
             while (isSomeoneAlive(normal, hang))
                 TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
