@@ -13,12 +13,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 /**
- * Данный тест может провалиться, в случае если вычислительная погрешность
- * {@link #COMPUTATION_INTERVAL} недостаточная для текущего состояния (скорости,
- * архитектуры, загруженности и т.п.) ЦП, в этом случае можно просто ее
- * увеличить :)
+ * This test can failed, in case when {@link #COMPUTATION_INTERVAL} will be
+ * insufficient for current hardware spec (speed, arch, load), if this happened,
+ * you can increment it :)
  * 
- * @author sbt-pereslegin-pa
+ * @author pereslegin-pa
  *
  */
 public class TaskTrackerTest {
@@ -34,14 +33,13 @@ public class TaskTrackerTest {
         @Override
         public void onEvent(TaskDelayed t) {
             counter.incrementAndGet();
-            //System.out.println(System.currentTimeMillis() - t.getOriginalStartTime() + " ms ");
         }
         
     }
     
     static class WorkThread extends Thread {
         
-        private final LifeCycle tracker;
+        private final TrackingLifeCycle tracker;
         
         private final long sleepTime;
         
@@ -49,7 +47,7 @@ public class TaskTrackerTest {
         
         private final int tryCount;
         
-        WorkThread(LifeCycle tracker, long sleepTime, CountDownLatch latch, int tryCount) {
+        WorkThread(TrackingLifeCycle tracker, long sleepTime, CountDownLatch latch, int tryCount) {
             this.tracker = tracker;
             this.sleepTime = sleepTime;
             this.latch = latch;
@@ -61,13 +59,14 @@ public class TaskTrackerTest {
             for (int i = 0; i < tryCount; i++)
             try {
                 latch.await();
-                tracker.start();
-                // здесь миитируем зависание
+                tracker.startTracking();
+                // task hanging imitation
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                return;
             } finally {
-                tracker.stop();
+                tracker.stopTracking();
             }
         }
     }
@@ -95,15 +94,14 @@ public class TaskTrackerTest {
     private static final long COMPUTATION_INTERVAL = 4 * MULTIPLIER;
     
     private static final long HANG_LIVE_TASK_INTERVAL = MAX_LIVE_TASK_INTERVAL * HANG_MULTIPLIER + (COMPUTATION_INTERVAL * HANG_MULTIPLIER);
-    
-    
+
     
     @Test
     public void testHangTaskTracking() throws InterruptedException {
         
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
-        PlainTaskTracker tracker = new LocalThreadTracker(new HangHandler(totalhangCounter), new HangHandler(totalUnhangCounter), MAX_LIVE_TASK_INTERVAL);
+        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(totalhangCounter), new HangHandler(totalUnhangCounter), MAX_LIVE_TASK_INTERVAL);
         
         LifeCycle controller = tracker.getController();
         
@@ -143,27 +141,6 @@ public class TaskTrackerTest {
         assertEquals("Total unhang count must be " + THREADS_COUNT * MULTIPLIER, THREADS_COUNT * MULTIPLIER, totalUnhangCounter.get());
         
         assertEquals("Total hang count must be " + (THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER), (THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER) , totalhangCounter.get());
-        
-        
-//        latch = new CountDownLatch(1);
-//        //volatile int a;
-//        final TaskTracker tracker1 = tracker; 
-//        new Thread() {
-//            @Override
-//            public void run() {
-//                try {
-//                    Thread.sleep(900);
-//                } catch (InterruptedException e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                }
-//                tracker1.submit( t, 10000);
-//                System.out.println("submitted");
-//            }
-//            
-//        }.start();
-//        System.out.println("removing");
-//        tracker.remove(t);
     }
 
 }

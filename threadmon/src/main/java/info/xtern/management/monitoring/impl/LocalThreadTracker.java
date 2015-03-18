@@ -1,10 +1,17 @@
 package info.xtern.management.monitoring.impl;
 
 import info.xtern.common.EventHandler;
-import info.xtern.management.monitoring.PlainTaskTracker;
+import info.xtern.management.monitoring.SimpleTaskTracker;
 
+/**
+ * Decorator for {@link DelayQueueBasedTracker}, implements
+ * {@link SimpleTaskTracker} interface
+ * 
+ * @author pereslegin-pa
+ *
+ */
 public class LocalThreadTracker extends DelayQueueBasedTracker implements
-    PlainTaskTracker {
+    SimpleTaskTracker {
 
     private final long baseDelayMillis;
 
@@ -15,12 +22,12 @@ public class LocalThreadTracker extends DelayQueueBasedTracker implements
     }
 
     @Override
-    public void start() {
+    public void startTracking() {
         super.submit(Thread.currentThread(), baseDelayMillis);
     }
 
     @Override
-    public void stop() {
+    public void stopTracking() {
         super.remove(Thread.currentThread());
     }
 

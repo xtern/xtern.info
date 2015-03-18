@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Optimistic tracking of "hanging" tasks, based on concurrent priority blocking
  * queue.<br>
- * <b>Warning</b> there is no explicit HB between {@link#trackTasksSync} /{@link#submit}/
- * {@link#remove}
+ * <b>Warning</b> there is no explicit HB between {@link#trackTasksSync}/
+ * {@link#submit}/{@link#remove}
  * 
  * @author sbt-pereslegin-pa
  * 
@@ -26,38 +26,37 @@ import java.util.concurrent.TimeUnit;
 public class DelayQueueBasedTracker implements TaskTracker<Thread>,
         TrackerControllerSync {
     //
-    private static final long SPIN_MAX_NANOS = TimeUnit.SECONDS.convert(1, TimeUnit.NANOSECONDS);
+    private static final long SPIN_MAX_NANOS = TimeUnit.SECONDS.convert(1,
+            TimeUnit.NANOSECONDS);
 
     /**
-     * Ассоциативная коллекция для хранения зависших задач
+     * In order to be able to get information about the nature of the problem,
+     * timeout interval, etc. after removal
      */
     private final ConcurrentMap<Long, TaskDelayed> hangMap = new ConcurrentHashMap<Long, TaskDelayed>();
 
     /**
-     * Очередь для обработки наступающих тайм-аутов (может переполниться, при
-     * задании некорректных интервалов)
+     * Queue for timeout handling
      */
     private final DelayQueue<TaskDelayed> taskQueue = new DelayQueue<TaskDelayed>();
 
     /**
-     * Обработчик события, когда произошел таймаут ожидания выполнения задачи
+     * Will be invoked if timeout occurs
      */
     private final EventHandler<TaskDelayed> onHangHandler;
 
     /**
-     * Обработчик события, когда задача, которая выглядела завислей отвисла
+     * Will be invoked when hanged task removed
      */
     private final EventHandler<TaskDelayed> onUnHangHandler;
 
     /**
-     * Конструктриурует монтиринг выполнения задач
+     * Constructs monitoring
      * 
      * @param onHangHandler
-     *            Обработчик события, когда произошел таймаут ожидания
-     *            выполнения задачи
+     *            handler for timeout processing
      * @param onUnHangHandler
-     *            Обработчик события, когда задача, которая выглядела завислей
-     *            отвисла
+     *            handler for reporting, that hanged task completed
      */
     public DelayQueueBasedTracker(EventHandler<TaskDelayed> onHangHandler,
             EventHandler<TaskDelayed> onUnHangHandler) {
@@ -98,14 +97,14 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
 
         while (!Thread.currentThread().isInterrupted()
                 && (task = taskQueue.take()) != null) {
-            //  
+            //
             if (onHangHandler != null)
                 onHangHandler.onEvent(task);
 
             if (onUnHangHandler != null)
                 hangMap.putIfAbsent(task.getTaskId(), task);
 
-            // 
+            //
             taskQueue.add(new TaskDelayed(task));
         }
     }
