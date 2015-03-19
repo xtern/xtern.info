@@ -104,7 +104,7 @@ public class TaskTrackerTest {
     
     private static final long HANG_MULTIPLIER = 6;
     
-    private static final long COMPUTATION_INTERVAL = 4 * MULTIPLIER;
+    private static final long COMPUTATION_INTERVAL = 4;
     
     private static final long HANG_LIVE_TASK_INTERVAL = MAX_LIVE_TASK_INTERVAL * HANG_MULTIPLIER + (COMPUTATION_INTERVAL * HANG_MULTIPLIER);
 
@@ -115,8 +115,14 @@ public class TaskTrackerTest {
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
         int[] countersArray = new int[1000];
-        
-        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(totalhangCounter, countersArray), new HangHandler(totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
+        System.out.println("Max time for executing task: " + MAX_LIVE_TASK_INTERVAL + " ms\n");
+        System.out.println(" Normal task delay interval: " + SHORT_LIVE_TASK_INTERVAL+ " ms");
+        System.out.println("   Hang task delay interval: " + HANG_LIVE_TASK_INTERVAL + " ms\n");
+        System.out.printf("Expected unhang count (removed earlier hanged tasks): %d (repeat count) x %d (threads count) = %d\n\n", MULTIPLIER, THREADS_COUNT, THREADS_COUNT * MULTIPLIER);
+        System.out.printf("Expected hang count (tracker detected task's hanging): %d (hang interva; / max interval) x %d (repeat count) x %d (threads count) = %d\n\n", HANG_MULTIPLIER, MULTIPLIER, THREADS_COUNT, HANG_MULTIPLIER * THREADS_COUNT * MULTIPLIER);
+        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(
+                totalhangCounter, countersArray), new HangHandler(
+                totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
         
         LifeCycle controller = tracker.getController();
         
@@ -157,12 +163,15 @@ public class TaskTrackerTest {
             e.printStackTrace();
         }
         finally {
-            System.out.println("No live test threads -> interrupting tracking");
+            System.out.println("No live test threads -> stopping tracking");
             controller.stop();
         }
-        assertEquals("Total unhang count must be " + THREADS_COUNT * MULTIPLIER, THREADS_COUNT * MULTIPLIER, totalUnhangCounter.get());
         
-        assertEquals("Total hang count must be " + (THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER), (THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER) , totalhangCounter.get());
+        int unhangCount = THREADS_COUNT * MULTIPLIER;
+        assertEquals("Total unhang count must be " + unhangCount, unhangCount, totalUnhangCounter.get());
+        
+        long hangCount = THREADS_COUNT * MULTIPLIER * HANG_MULTIPLIER;
+        assertEquals("Total hang count must be " + hangCount, hangCount, totalhangCounter.get());
 
         for (int i = 0; i < THREADS_COUNT; i++) {
             // 
