@@ -1,6 +1,6 @@
 package info.xtern.management.monitoring;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import info.xtern.common.EventHandler;
 import info.xtern.common.LifeCycle;
 import info.xtern.management.monitoring.impl.LocalThreadTracker;
@@ -9,34 +9,35 @@ import info.xtern.management.monitoring.impl.TaskDelayed;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import org.junit.Test;
 
 /**
- * This test can failed, in case when {@link #COMPUTATION_INTERVAL} will be
- * insufficient for current hardware spec (speed, arch, load), if this happened,
- * you can increment it :)
+ * This test can not pass due to insufficient {@link #COMPUTATION_INTERVAL} for
+ * current hardware spec (speed, arch, load), if this happened, you can
+ * increment it :)
  * 
- * @author pereslegin-pa
- *
+ * @author pereslegin pavel
  */
 public class TaskTrackerTest {
     
-    private static final AtomicIntegerArray atomicArray = new AtomicIntegerArray(1000);
+    
     
     private class HangHandler implements EventHandler<TaskDelayed> {
 
         final AtomicInteger counter;
         
-        HangHandler(AtomicInteger counter) {
+        final int[] countersArray;
+        
+        HangHandler(AtomicInteger counter, int[] countersArray) {
             this.counter = counter;
+            this.countersArray = countersArray;
         }
         
         @Override
         public void onEvent(TaskDelayed t) {
             counter.incrementAndGet();
-            atomicArray.incrementAndGet( (int) t.getTaskId() );
+            countersArray[(int) t.getTaskId()]++;
         }
         
     }
@@ -83,6 +84,14 @@ public class TaskTrackerTest {
         return false;
     }
     
+    private static boolean isThreadIdentifiersFitsRange(int range, Thread[]... threadArrays) {
+        for (int i = 0; i < threadArrays.length; i++)
+            for (int j = 0; j < threadArrays[i].length; j++)
+                if (threadArrays[i][j].getId() >= range)
+                    return false;
+        return true;
+    }
+    
     
     
     private static final int MULTIPLIER = 5;
@@ -105,7 +114,9 @@ public class TaskTrackerTest {
         
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
-        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(totalhangCounter), new HangHandler(totalUnhangCounter), MAX_LIVE_TASK_INTERVAL);
+        int[] countersArray = new int[1000];
+        
+        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(totalhangCounter, countersArray), new HangHandler(totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
         
         LifeCycle controller = tracker.getController();
         
@@ -120,19 +131,26 @@ public class TaskTrackerTest {
         for (int i = 0; i < hang.length; i++) {
             hang[i] = new WorkThread(tracker, HANG_LIVE_TASK_INTERVAL, latch, MULTIPLIER);
         }
+        
+        // TODO
+        if (!isThreadIdentifiersFitsRange(countersArray.length, normal, hang)) {
+            fail("VM already created many threads ( > " + countersArray.length
+                    + "), this test will not work properly in this environment and must be reorganized");
+        }
+        
         for (int i = 0; i < THREADS_COUNT; i++) {
             normal[i].start();
             hang[i].start();
         }
         
         try {
-            // 1. starting monitoring thread
+            // starting monitoring thread
             controller.start();
             
-            // 2. starting all threads
+            // starting all threads
             latch.countDown();
             
-            // 3. awaiting threads termination
+            // awaiting threads termination
             while (isSomeoneAlive(normal, hang))
                 TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
@@ -149,12 +167,12 @@ public class TaskTrackerTest {
         for (int i = 0; i < THREADS_COUNT; i++) {
             // 
             int id = (int)normal[i].getId();
-            assertEquals( "Task " + id + " should not hang", 0, atomicArray.get(id));
+            assertEquals( "Task " + id + " should not hang", 0, countersArray[id]);
         }
         int hangPlusUnhangCount = (int) (MULTIPLIER * HANG_MULTIPLIER + MULTIPLIER) ;
         for (int i = 0; i < THREADS_COUNT; i++) {
             int id = (int)hang[i].getId();
-            assertEquals( "Task " + id + " should hang " + (MULTIPLIER * HANG_MULTIPLIER) + " and unhang for " + MULTIPLIER, hangPlusUnhangCount, atomicArray.get(id));
+            assertEquals( "Task " + id + " should hang " + (MULTIPLIER * HANG_MULTIPLIER) + " and unhang for " + MULTIPLIER, hangPlusUnhangCount, countersArray[id]);
         }
     }
 
