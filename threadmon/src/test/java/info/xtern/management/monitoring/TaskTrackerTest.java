@@ -97,6 +97,7 @@ public class TaskTrackerTest {
         public void uncaughtException(Thread t, Throwable e) {
             this.t = t;
             this.e = e;
+            e.printStackTrace(System.err);
         }
         
     }
