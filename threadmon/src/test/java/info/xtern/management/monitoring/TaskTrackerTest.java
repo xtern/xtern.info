@@ -21,7 +21,19 @@ import org.junit.Test;
  */
 public class TaskTrackerTest {
     
+    private static final int MULTIPLIER = 5;
     
+    private static final int THREADS_COUNT = 10;
+    
+    private static final long SHORT_LIVE_TASK_INTERVAL = 100;
+    
+    private static final long MAX_LIVE_TASK_INTERVAL = 200;
+    
+    private static final long HANG_MULTIPLIER = 6;
+    
+    private static final long COMPUTATION_INTERVAL = 4;
+    
+    private static final long HANG_LIVE_TASK_INTERVAL = MAX_LIVE_TASK_INTERVAL * HANG_MULTIPLIER + (COMPUTATION_INTERVAL * HANG_MULTIPLIER);
     
     private class HangHandler implements EventHandler<TaskDelayed> {
 
@@ -91,22 +103,6 @@ public class TaskTrackerTest {
                     return false;
         return true;
     }
-    
-    
-    
-    private static final int MULTIPLIER = 5;
-    
-    private static final int THREADS_COUNT = 10;
-    
-    private static final long SHORT_LIVE_TASK_INTERVAL = 100;
-    
-    private static final long MAX_LIVE_TASK_INTERVAL = 200;
-    
-    private static final long HANG_MULTIPLIER = 6;
-    
-    private static final long COMPUTATION_INTERVAL = 4;
-    
-    private static final long HANG_LIVE_TASK_INTERVAL = MAX_LIVE_TASK_INTERVAL * HANG_MULTIPLIER + (COMPUTATION_INTERVAL * HANG_MULTIPLIER);
 
     
     @Test
@@ -115,11 +111,11 @@ public class TaskTrackerTest {
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
         int[] countersArray = new int[1000];
-        System.out.println("Max time for executing task: " + MAX_LIVE_TASK_INTERVAL + " ms\n");
-        System.out.println(" Normal task delay interval: " + SHORT_LIVE_TASK_INTERVAL+ " ms");
-        System.out.println("   Hang task delay interval: " + HANG_LIVE_TASK_INTERVAL + " ms\n");
-        System.out.printf("Expected unhang count (removed earlier hanged tasks): %d (repeat count) x %d (threads count) = %d\n\n", MULTIPLIER, THREADS_COUNT, THREADS_COUNT * MULTIPLIER);
-        System.out.printf("Expected hang count (tracker detected task's hanging): %d (hang interva; / max interval) x %d (repeat count) x %d (threads count) = %d\n\n", HANG_MULTIPLIER, MULTIPLIER, THREADS_COUNT, HANG_MULTIPLIER * THREADS_COUNT * MULTIPLIER);
+        System.out.printf("Max time for executing task: %d ms%n%n", MAX_LIVE_TASK_INTERVAL);
+        System.out.printf(" Normal task delay interval: %d ms%n", SHORT_LIVE_TASK_INTERVAL);
+        System.out.printf("   Hang task delay interval: %d ms%n%n", HANG_LIVE_TASK_INTERVAL);
+        System.out.printf("Expected unhang count (removed earlier hanged tasks): %d(repeat count) x %d(threads count) = %d%n%n", MULTIPLIER, THREADS_COUNT, THREADS_COUNT * MULTIPLIER);
+        System.out.printf("Expected hang count (tracker detected task's hanging): %d(hang interval / max interval) x %d(repeat count) x %d(threads count) = %d%n%n", HANG_MULTIPLIER, MULTIPLIER, THREADS_COUNT, HANG_MULTIPLIER * THREADS_COUNT * MULTIPLIER);
         SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(
                 totalhangCounter, countersArray), new HangHandler(
                 totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
@@ -160,7 +156,7 @@ public class TaskTrackerTest {
             while (isSomeoneAlive(normal, hang))
                 TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         finally {
             System.out.println("No live test threads -> stopping tracking");

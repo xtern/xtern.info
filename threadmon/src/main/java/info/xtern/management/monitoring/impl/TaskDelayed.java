@@ -40,10 +40,6 @@ public class TaskDelayed extends Task implements Delayed {
         if (o == this) {
             return 0;
         }
-        if (!(o instanceof Delayed)) {
-            throw new IllegalArgumentException(
-                    "Unable to compare with not Delayed");
-        }
 
         long diff = getDelay(TimeUnit.MILLISECONDS)
                 - o.getDelay(TimeUnit.MILLISECONDS);
