@@ -6,6 +6,7 @@ import info.xtern.common.LifeCycle;
 import info.xtern.management.monitoring.impl.LocalThreadTracker;
 import info.xtern.management.monitoring.impl.TaskDelayed;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,12 +81,24 @@ public class TaskTrackerTest {
                 // task hanging imitation
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
+                // copying to exception handler (will be validated after completion)
+                throw new RuntimeException(e);
             } finally {
                 tracker.stopTracking();
             }
         }
+    }
+    class TestThreadsLastExceptionHandler implements UncaughtExceptionHandler {
+
+        Thread t;
+        Throwable e;
+        
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            this.t = t;
+            this.e = e;
+        }
+        
     }
     
     private static boolean isSomeoneAlive(Thread[]... threadArrays) {
@@ -106,10 +119,12 @@ public class TaskTrackerTest {
 
     
     @Test
-    public void testHangTaskTracking() throws InterruptedException {
+    public void testHangTaskTracking() throws Throwable {
         
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
+        TestThreadsLastExceptionHandler exceptionHandler = new TestThreadsLastExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
         int[] countersArray = new int[1000];
         System.out.printf("Max time for executing task: %d ms%n%n", MAX_LIVE_TASK_INTERVAL);
         System.out.printf(" Normal task delay interval: %d ms%n", SHORT_LIVE_TASK_INTERVAL);
@@ -141,6 +156,7 @@ public class TaskTrackerTest {
         }
         
         for (int i = 0; i < THREADS_COUNT; i++) {
+            
             normal[i].start();
             hang[i].start();
         }
@@ -162,7 +178,9 @@ public class TaskTrackerTest {
             System.out.println("No live test threads -> stopping tracking");
             controller.stop();
         }
-        
+        if (exceptionHandler.e != null) {
+            throw exceptionHandler.e;
+        }
         int unhangCount = THREADS_COUNT * MULTIPLIER;
         assertEquals("Total unhang count must be " + unhangCount, unhangCount, totalUnhangCounter.get());
         
@@ -179,6 +197,7 @@ public class TaskTrackerTest {
             int id = (int)hang[i].getId();
             assertEquals( "Task " + id + " should hang " + (MULTIPLIER * HANG_MULTIPLIER) + " and unhang for " + MULTIPLIER, hangPlusUnhangCount, countersArray[id]);
         }
+
     }
 
 }
