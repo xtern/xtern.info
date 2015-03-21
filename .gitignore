@@ -46,3 +46,10 @@ Temporary Items
 .classpath
 .project
 .settings/
+.gradle/
+.sonar/
+.gitignore
+*/bin/
+*/build/
+analyze.cmd
+sonar-project.properties
