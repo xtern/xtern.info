@@ -1,6 +1,7 @@
 package info.xtern.management.monitoring;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import info.xtern.common.EventHandler;
 import info.xtern.common.LifeCycle;
 import info.xtern.management.monitoring.impl.LocalThreadTracker;
@@ -8,7 +9,6 @@ import info.xtern.management.monitoring.impl.TaskDelayed;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
@@ -65,11 +65,14 @@ public class TaskTrackerTest {
         
         private final int tryCount;
         
-        WorkThread(TrackingLifeCycle tracker, long sleepTime, CountDownLatch latch, int tryCount) {
+        private final CountDownLatch endLatch;
+        
+        WorkThread(TrackingLifeCycle tracker, long sleepTime, CountDownLatch latch, CountDownLatch endLatch, int tryCount) {
             this.tracker = tracker;
             this.sleepTime = sleepTime;
             this.latch = latch;
             this.tryCount = tryCount;
+            this.endLatch = endLatch;
         }
         
         @Override
@@ -86,8 +89,11 @@ public class TaskTrackerTest {
             } finally {
                 tracker.stopTracking();
             }
+            endLatch.countDown();
         }
     }
+    
+
     class TestThreadsLastExceptionHandler implements UncaughtExceptionHandler {
 
         Thread t;
@@ -102,14 +108,6 @@ public class TaskTrackerTest {
         
     }
     
-    private static boolean isSomeoneAlive(Thread[]... threadArrays) {
-        for (int i = 0; i < threadArrays.length; i++)
-            for (int j = 0; j < threadArrays[i].length; j++)
-                if (threadArrays[i][j].isAlive())
-                    return true;
-        return false;
-    }
-    
     private static boolean isThreadIdentifiersFitsRange(int range, Thread[]... threadArrays) {
         for (int i = 0; i < threadArrays.length; i++)
             for (int j = 0; j < threadArrays[i].length; j++)
@@ -120,34 +118,54 @@ public class TaskTrackerTest {
 
     
     @Test
-    public void testHangTaskTracking() throws Throwable {
-        
+    public void testHangTrackingWithoutMainLock() throws Throwable {
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
+        
+        int[] countersArray = new int[1000];
+        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(
+                totalhangCounter, countersArray), new HangHandler(
+                totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
+        testHangTaskTracking(tracker, countersArray, totalhangCounter, totalUnhangCounter);
+    }
+    
+//    @Test
+//    public void testHangTrackingWithMainLock() throws Throwable {
+//        AtomicInteger totalUnhangCounter = new AtomicInteger();
+//        AtomicInteger totalhangCounter = new AtomicInteger();
+//        
+//        int[] countersArray = new int[1000];
+//        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(
+//                totalhangCounter, countersArray), new HangHandler(
+//                totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
+//        testHangTaskTracking(tracker, countersArray, totalhangCounter, totalUnhangCounter);
+//    }
+
+    public void testHangTaskTracking(SimpleTaskTracker tracker, int[] countersArray, AtomicInteger totalhangCounter, AtomicInteger totalUnhangCounter) throws Throwable {
+        
         TestThreadsLastExceptionHandler exceptionHandler = new TestThreadsLastExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
-        int[] countersArray = new int[1000];
+        
         System.out.printf("Max time for executing task: %d ms%n%n", MAX_LIVE_TASK_INTERVAL);
         System.out.printf(" Normal task delay interval: %d ms%n", SHORT_LIVE_TASK_INTERVAL);
         System.out.printf("   Hang task delay interval: %d ms%n%n", HANG_LIVE_TASK_INTERVAL);
         System.out.printf("Expected unhang count (removed earlier hanged tasks): %d(repeat count) x %d(threads count) = %d%n%n", MULTIPLIER, THREADS_COUNT, THREADS_COUNT * MULTIPLIER);
         System.out.printf("Expected hang count (tracker detected task's hanging): %d(hang interval / max interval) x %d(repeat count) x %d(threads count) = %d%n%n", HANG_MULTIPLIER, MULTIPLIER, THREADS_COUNT, HANG_MULTIPLIER * THREADS_COUNT * MULTIPLIER);
-        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(
-                totalhangCounter, countersArray), new HangHandler(
-                totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
+
         
         LifeCycle controller = tracker.getController();
         
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(THREADS_COUNT * 2);
         
         final WorkThread[] normal = new WorkThread[THREADS_COUNT];
         for (int i = 0; i < normal.length; i++) {
-            normal[i] = new WorkThread(tracker, SHORT_LIVE_TASK_INTERVAL, latch, MULTIPLIER);
+            normal[i] = new WorkThread(tracker, SHORT_LIVE_TASK_INTERVAL, startLatch, endLatch, MULTIPLIER);
         }
         
         final WorkThread[] hang = new WorkThread[THREADS_COUNT];
         for (int i = 0; i < hang.length; i++) {
-            hang[i] = new WorkThread(tracker, HANG_LIVE_TASK_INTERVAL, latch, MULTIPLIER);
+            hang[i] = new WorkThread(tracker, HANG_LIVE_TASK_INTERVAL, startLatch, endLatch, MULTIPLIER);
         }
         
         // TODO
@@ -167,11 +185,10 @@ public class TaskTrackerTest {
             controller.start();
             
             // starting all threads
-            latch.countDown();
+            startLatch.countDown();
             
             // awaiting threads termination
-            while (isSomeoneAlive(normal, hang))
-                TimeUnit.SECONDS.sleep(1);
+            endLatch.await();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
