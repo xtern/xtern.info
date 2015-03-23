@@ -40,10 +40,14 @@ public class TaskDelayed extends Task implements Delayed {
         if (o == this) {
             return 0;
         }
-
+        
+        if (o == null)
+            throw new NullPointerException("Unable to compare with null");
+        
         long diff = getDelay(TimeUnit.MILLISECONDS)
                 - o.getDelay(TimeUnit.MILLISECONDS);
-        return (diff < 0 ? -1 : 1);
+        
+        return (diff == 0L ? 0 : (diff < 0L ? -1 : 1));
     }
 
     @Override
