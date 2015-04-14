@@ -7,7 +7,7 @@ package info.xtern.management.monitoring;
  * Allows monitoring thread track events from task tracker without any knowledge
  * about implementation
  * 
- * @author pereslegin-pa
+ * @author Pereslegin Pavel
  */
 public interface TrackerControllerSync {
     /**

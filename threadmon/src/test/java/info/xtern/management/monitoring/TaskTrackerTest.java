@@ -2,9 +2,9 @@ package info.xtern.management.monitoring;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import info.xtern.common.EventHandler;
 import info.xtern.common.LifeCycle;
-import info.xtern.management.monitoring.impl.LocalThreadTracker;
+import info.xtern.management.monitoring.impl.CurrentThreadFixedDelayConcurrentTracking;
+import info.xtern.management.monitoring.impl.CurrentThreadSimpleTracking;
 import info.xtern.management.monitoring.impl.TaskDelayed;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -36,7 +36,7 @@ public class TaskTrackerTest {
     
     private static final long HANG_LIVE_TASK_INTERVAL = MAX_LIVE_TASK_INTERVAL * HANG_MULTIPLIER + (COMPUTATION_INTERVAL * HANG_MULTIPLIER);
     
-    private class HangHandler implements EventHandler<TaskDelayed> {
+    private class HangHandler implements HangEventHandler<TaskDelayed> {
 
         final AtomicInteger counter;
         
@@ -50,7 +50,26 @@ public class TaskTrackerTest {
         @Override
         public void onEvent(TaskDelayed t) {
             counter.incrementAndGet();
-            countersArray[(int) t.getTaskId()]++;
+            countersArray[(int) t.getId().longValue()]++;
+        }
+        
+    }
+    
+    private class UnHangHandler implements UnHangEventHandler<TaskDelayed> {
+
+        final AtomicInteger counter;
+        
+        final int[] countersArray;
+        
+        UnHangHandler(AtomicInteger counter, int[] countersArray) {
+            this.counter = counter;
+            this.countersArray = countersArray;
+        }
+        
+        @Override
+        public void onEvent(TaskDelayed t, int count) {
+            counter.incrementAndGet();
+            countersArray[(int) t.getId().longValue()]++;
         }
         
     }
@@ -118,14 +137,27 @@ public class TaskTrackerTest {
 
     
     @Test
+    public void testHangTrackingWithLock() throws Throwable {
+        AtomicInteger totalUnhangCounter = new AtomicInteger();
+        AtomicInteger totalhangCounter = new AtomicInteger();
+        
+        int[] countersArray = new int[1000];
+        SimpleTaskTracker tracker = new CurrentThreadSimpleTracking(MAX_LIVE_TASK_INTERVAL, new HangHandler(
+                totalhangCounter, countersArray), new UnHangHandler(
+                totalUnhangCounter, countersArray));
+        testHangTaskTracking(tracker, countersArray, totalhangCounter, totalUnhangCounter);
+    }
+    
+    @Test
     public void testHangTrackingWithoutMainLock() throws Throwable {
         AtomicInteger totalUnhangCounter = new AtomicInteger();
         AtomicInteger totalhangCounter = new AtomicInteger();
         
         int[] countersArray = new int[1000];
-        SimpleTaskTracker tracker = new LocalThreadTracker(new HangHandler(
-                totalhangCounter, countersArray), new HangHandler(
-                totalUnhangCounter, countersArray), MAX_LIVE_TASK_INTERVAL);
+		SimpleTaskTracker tracker = new CurrentThreadFixedDelayConcurrentTracking(
+				MAX_LIVE_TASK_INTERVAL, new HangHandler(totalhangCounter,
+						countersArray), new UnHangHandler(totalUnhangCounter,
+						countersArray));
         testHangTaskTracking(tracker, countersArray, totalhangCounter, totalUnhangCounter);
     }
     

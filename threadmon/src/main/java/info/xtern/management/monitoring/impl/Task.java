@@ -1,21 +1,21 @@
-/**
- * 
- */
 package info.xtern.management.monitoring.impl;
+
+import info.xtern.common.Identified;
 
 /**
  * Wrapper implements hashCode/equals to allow identify object by long
- * identifier 
+ * identifier.
  * 
- * @author sbt-pereslegin-pa
+ * @author pereslegin pavel
+ * 
  * @see java.lang.Long
  */
-public class Task {
+public class Task implements Identified<Long> {
     
-    protected final long taskId;
-    
-    public Task(long taskId) {
-        this.taskId = taskId;
+    private final Long ident;
+
+    public Task(Long taskId) {
+        this.ident = taskId;
     }
     
     /* (non-Javadoc)
@@ -23,10 +23,7 @@ public class Task {
      */
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (taskId ^ (taskId >>> 32));
-        return result;
+        return ident.hashCode();
     }
 
     /* (non-Javadoc)
@@ -40,6 +37,11 @@ public class Task {
             return false;
         if (!(obj instanceof Task))
             return false;
-        return taskId == ((Task) obj).taskId;
+        return ident == ((Task) obj).ident;
     }
+
+	@Override
+	public Long getId() {
+		return this.ident;
+	}
 }

@@ -27,7 +27,7 @@ public class TaskDelayed extends Task implements Delayed {
     }
 
     protected TaskDelayed(TaskDelayed task) {
-        super(task.taskId);
+        super(task.getId());
         this.originalStartTime = task.getOriginalStartTime();
         this.delay = task.delay;
         this.threadRef = task.threadRef;
@@ -55,10 +55,6 @@ public class TaskDelayed extends Task implements Delayed {
 
         return unit.convert(delay - (System.currentTimeMillis() - startTime),
                 TimeUnit.MILLISECONDS);
-    }
-
-    public long getTaskId() {
-        return taskId;
     }
 
     public Thread getThread() {
