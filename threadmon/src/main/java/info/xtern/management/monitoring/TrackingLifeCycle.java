@@ -8,8 +8,8 @@ package info.xtern.management.monitoring;
  *
  */
 public interface TrackingLifeCycle {
-    
+
     public void startTracking();
-    
+
     public void stopTracking();
 }

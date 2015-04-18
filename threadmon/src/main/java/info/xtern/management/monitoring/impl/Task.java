@@ -11,14 +11,16 @@ import info.xtern.common.Identified;
  * @see java.lang.Long
  */
 public class Task implements Identified<Long> {
-    
+
     private final Long ident;
 
     public Task(Long taskId) {
         this.ident = taskId;
     }
-    
-    /* (non-Javadoc)
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -26,7 +28,9 @@ public class Task implements Identified<Long> {
         return ident.hashCode();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -40,8 +44,8 @@ public class Task implements Identified<Long> {
         return ident == ((Task) obj).ident;
     }
 
-	@Override
-	public Long getId() {
-		return this.ident;
-	}
+    @Override
+    public Long getId() {
+        return this.ident;
+    }
 }

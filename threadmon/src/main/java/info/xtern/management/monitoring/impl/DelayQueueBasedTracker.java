@@ -73,35 +73,35 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
 
     @Override
     public boolean remove(Thread thread) {
-    	lock.lock();
-    	try {
-	        TaskDelayed taskDelayed;
-	        Task taskId;
-	        boolean removed;
-	
-	        if (!(removed = taskQueue.remove(taskId = new Task(thread.getId())))) {
-	            removed = removeWithSpin(SPIN_MAX_NANOS, taskId);
-	        }
-	
-	        // checking what task has been completed, it it was reported as hang we
-	        // must perform "unhang" action
-	        if ((taskDelayed = hangMap.remove(thread.getId())) != null) {
-	            onUnHangHandler.onEvent(taskDelayed, hangMap.size());
-	        }
-	        return removed;
-    	} finally {
-    		lock.unlock();
-    	}
+        lock.lock();
+        try {
+            TaskDelayed taskDelayed;
+            Task taskId;
+            boolean removed;
+    
+            if (!(removed = taskQueue.remove(taskId = new Task(thread.getId())))) {
+                removed = removeWithSpin(SPIN_MAX_NANOS, taskId);
+            }
+    
+            // checking what task has been completed, it it was reported as hang we
+            // must perform "unhang" action
+            if ((taskDelayed = hangMap.remove(thread.getId())) != null) {
+                onUnHangHandler.onEvent(taskDelayed, hangMap.size());
+            }
+            return removed;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void submit(Thread t, long millsWait) {
-    	lock.lock();
-    	try {
-    		taskQueue.add(new TaskDelayed(t, millsWait));
-    	} finally {
-    		lock.unlock();
-    	}
+        lock.lock();
+        try {
+            taskQueue.add(new TaskDelayed(t, millsWait));
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -112,16 +112,16 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
                 && (task = taskQueue.take()) != null) {
             lock.lock();
             try {
-	            if (onHangHandler != null)
-	                onHangHandler.onEvent(task);
-	
-	            if (onUnHangHandler != null)
-	                hangMap.putIfAbsent(task.getId(), task);
-	
-	            //
-	            taskQueue.add(new TaskDelayed(task));
+                if (onHangHandler != null)
+                    onHangHandler.onEvent(task);
+    
+                if (onUnHangHandler != null)
+                    hangMap.putIfAbsent(task.getId(), task);
+    
+                //
+                taskQueue.add(new TaskDelayed(task));
             } finally {
-            	lock.unlock();
+                lock.unlock();
             }
         }
     }

@@ -8,11 +8,11 @@ package info.xtern.management.monitoring;
  * @param <T>
  */
 public interface HangEventHandler<T> {
-    
-	/**
-	 * 
-	 * @param task
-	 */
+
+    /**
+     * 
+     * @param task
+     */
     public void onEvent(T task);
 
 }

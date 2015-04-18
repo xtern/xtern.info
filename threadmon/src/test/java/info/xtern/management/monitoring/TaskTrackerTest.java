@@ -154,10 +154,10 @@ public class TaskTrackerTest {
         AtomicInteger totalhangCounter = new AtomicInteger();
         
         int[] countersArray = new int[1000];
-		SimpleTaskTracker tracker = new CurrentThreadFixedDelayConcurrentTracking(
-				MAX_LIVE_TASK_INTERVAL, new HangHandler(totalhangCounter,
-						countersArray), new UnHangHandler(totalUnhangCounter,
-						countersArray));
+        SimpleTaskTracker tracker = new CurrentThreadFixedDelayConcurrentTracking(
+                MAX_LIVE_TASK_INTERVAL, new HangHandler(totalhangCounter,
+                        countersArray), new UnHangHandler(totalUnhangCounter,
+                        countersArray));
         testHangTaskTracking(tracker, countersArray, totalhangCounter, totalUnhangCounter);
     }
     

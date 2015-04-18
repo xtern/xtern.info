@@ -10,9 +10,9 @@ package info.xtern.common;
  * @param <T>
  */
 public interface Identified<T> {
-	/**
-	 * 
-	 * @return identifier of object
-	 */
-	public T getId();
+    /**
+     * 
+     * @return identifier of object
+     */
+    public T getId();
 }

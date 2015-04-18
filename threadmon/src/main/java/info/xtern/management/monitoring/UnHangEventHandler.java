@@ -9,14 +9,14 @@ package info.xtern.management.monitoring;
  */
 public interface UnHangEventHandler<T> {
 
-	/**
-	 * Handles unhanged task (that was reported as "hanged" previously
-	 * 
-	 * @param task
-	 *            unhanged task
-	 * @param leftHangCount
-	 *            count of still hanged tasks (0 - no hanged tasks)
-	 */
-	public void onEvent(T task, int leftHangCount);
+    /**
+     * Handles unhanged task (that was reported as "hanged" previously
+     * 
+     * @param task
+     *            unhanged task
+     * @param leftHangCount
+     *            count of still hanged tasks (0 - no hanged tasks)
+     */
+    public void onEvent(T task, int leftHangCount);
 
 }

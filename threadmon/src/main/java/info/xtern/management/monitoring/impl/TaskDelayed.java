@@ -5,7 +5,6 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-
 /**
  * Simple implementation for {@link java.util.concurrent.Delayed}
  * 
@@ -40,13 +39,13 @@ public class TaskDelayed extends Task implements Delayed {
         if (o == this) {
             return 0;
         }
-        
+
         if (o == null)
             throw new NullPointerException("Unable to compare with null");
-        
+
         long diff = getDelay(TimeUnit.MILLISECONDS)
                 - o.getDelay(TimeUnit.MILLISECONDS);
-        
+
         return (diff == 0L ? 0 : (diff < 0L ? -1 : 1));
     }
 
