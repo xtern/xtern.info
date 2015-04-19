@@ -3,14 +3,14 @@
  */
 package info.xtern.management.monitoring.impl;
 
-import info.xtern.common.PrototypeFactory;
 import info.xtern.common.Identified;
+import info.xtern.common.PrototypeFactory;
 import info.xtern.management.monitoring.HangEventHandler;
 import info.xtern.management.monitoring.UnHangEventHandler;
 
 import java.lang.Thread.State;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -20,10 +20,10 @@ import java.util.concurrent.locks.LockSupport;
  * @author pereslegin pavel
  *
  */
-public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>  {
+public class ConcurrentDequeBasedSimpleTracker<E extends Delayed & Identified<Long>>  {
 
     private volatile Thread localThread;
-    private final ConcurrentLinkedQueue<E> queue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedDeque<E> deque = new ConcurrentLinkedDeque<>();
     
     private final HangEventHandler<E> hangHandler;
     
@@ -33,9 +33,7 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
     
     private final PrototypeFactory<E> fact;
     
-    private volatile boolean canRemove = true;
-    
-    LinkedQueueBasedSimpleTracker(HangEventHandler<E> hangHandler,
+    ConcurrentDequeBasedSimpleTracker(HangEventHandler<E> hangHandler,
             UnHangEventHandler<E> unhangHandler, PrototypeFactory<E> fact) {
         this.hangHandler = hangHandler;
         this.unhangHandler = unhangHandler;
@@ -47,7 +45,7 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
         if (th == null)
             throw new IllegalStateException("Task tracker MUST BE started before workers");
         
-        queue.add(t);
+        deque.offerLast(t);
         
         if (th.getState() == State.WAITING) {
             LockSupport.unpark(th);
@@ -55,9 +53,8 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
     }
     
     public void remove(E t) {
-        // spin forever
-        while (!canRemove);
-        while (!queue.remove(t));
+        // for a short time interval task
+        while (!deque.remove(t));
 
         if ((t = hangMap.remove(t.getId())) != null)
             unhangHandler.onEvent(t, hangMap.size());
@@ -70,26 +67,26 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
         boolean event = false;
         while (!local.isInterrupted()) {
 
-            while ((t = queue.peek()) == null) {
+            while ((t = deque.peek()) == null) {
                 LockSupport.park(local);
             }
             long timeout = t.getDelay(TimeUnit.NANOSECONDS);
-            if (timeout > 0 && queue.peek() == t) {
+            if (timeout > 0 && deque.peek() == t) {
                 //
                 LockSupport.parkNanos(timeout);
             }
 
             if (t.getDelay(TimeUnit.NANOSECONDS) <= 0) { // spurious wake up test
-                canRemove = false;
-                try {
-                    if (queue.peek() == t) {
-                        if (queue.poll() != t) { // someone other was peeked - inconsistent state
-                            throw new IllegalStateException("State failed");
-                        }
+                if (deque.peek() == t) {
+                    // testing that element was not removed
+                    if (deque.poll() != t) {
+                        // if someone other was polled - reversing (this is
+                        // possible because we have a single thread for tracking)
+                        deque.addFirst(t);
+                    }
+                    else {
                         event = true;
                     }
-                } finally {
-                    canRemove = true;
                 }
             }
             if (event) {

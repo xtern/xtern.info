@@ -14,7 +14,7 @@ import info.xtern.management.monitoring.UnHangEventHandler;
 public class NonBlockingSimpleTracking implements
         SimpleTaskTracker, TrackerControllerSync {
 
-    private final LinkedQueueBasedSimpleTracker<TaskDelayed> trackingBase;
+    private final ConcurrentDequeBasedSimpleTracker<TaskDelayed> trackingBase;
 
     private final long delay;
     
@@ -30,7 +30,7 @@ public class NonBlockingSimpleTracking implements
     public NonBlockingSimpleTracking(long delay,
             HangEventHandler<TaskDelayed> hangHandler,
             UnHangEventHandler<TaskDelayed> unhangHandler) {
-        this.trackingBase = new LinkedQueueBasedSimpleTracker<TaskDelayed>(
+        this.trackingBase = new ConcurrentDequeBasedSimpleTracker<TaskDelayed>(
                 hangHandler, unhangHandler, new Factory());
         this.delay = delay;
     }
