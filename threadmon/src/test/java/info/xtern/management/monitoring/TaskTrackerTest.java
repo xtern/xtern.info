@@ -3,8 +3,8 @@ package info.xtern.management.monitoring;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import info.xtern.common.LifeCycle;
-import info.xtern.management.monitoring.impl.NonBlockingSimpleTracking;
 import info.xtern.management.monitoring.impl.DelayQueueToSimpleTrackingAdapter;
+import info.xtern.management.monitoring.impl.NonBlockingSimpleTracking;
 import info.xtern.management.monitoring.impl.TaskDelayed;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -186,6 +186,8 @@ public class TaskTrackerTest {
 
         
         LifeCycle controller = tracker.getController();
+        // starting monitoring thread
+        controller.start();
         
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch endLatch = new CountDownLatch(THREADS_COUNT * 2);
@@ -213,8 +215,7 @@ public class TaskTrackerTest {
         }
         
         try {
-            // starting monitoring thread
-            controller.start();
+            
             
             // starting all threads
             startLatch.countDown();

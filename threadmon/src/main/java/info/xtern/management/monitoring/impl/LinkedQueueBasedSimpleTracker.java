@@ -44,7 +44,9 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
         Thread th = localThread;
         if (th == null)
             throw new IllegalStateException("Task tracker MUST BE started before workers");
+        
         queue.add(t);
+        
         if (th.getState() == State.WAITING) {
             LockSupport.unpark(th);
         }
@@ -52,14 +54,15 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
     
     public void remove(E t) {
         // spin forever
-        while (!queue.remove(t)) ;
-        
+        while (!queue.remove(t));
+
         if ((t = hangMap.remove(t.getId())) != null)
             unhangHandler.onEvent(t, hangMap.size());
     }
     
     public void track() throws InterruptedException {
-        Thread local = localThread = Thread.currentThread();
+        localThread = Thread.currentThread();
+        Thread local = Thread.currentThread();
         E t;
         boolean event = false;
         while (!local.isInterrupted()) {

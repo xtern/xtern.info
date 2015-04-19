@@ -48,4 +48,9 @@ public class Task implements Identified<Long> {
     public Long getId() {
         return this.ident;
     }
+    
+    @Override
+    public String toString() {
+        return String.valueOf( this.ident );
+    }
 }
