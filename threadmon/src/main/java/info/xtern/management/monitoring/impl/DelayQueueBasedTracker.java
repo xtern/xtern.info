@@ -12,7 +12,6 @@ import info.xtern.management.monitoring.UnHangEventHandler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.DelayQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,8 +26,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DelayQueueBasedTracker implements TaskTracker<Thread>,
         TrackerControllerSync {
     //
-    private static final long SPIN_MAX_NANOS = TimeUnit.SECONDS.convert(1,
-            TimeUnit.NANOSECONDS);
+//    private static final long SPIN_MAX_NANOS = TimeUnit.SECONDS.convert(1,
+//            TimeUnit.NANOSECONDS);
 
     private final Lock lock = new ReentrantLock();
     
@@ -80,7 +79,8 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
             boolean removed;
     
             if (!(removed = taskQueue.remove(taskId = new Task(thread.getId())))) {
-                removed = removeWithSpin(SPIN_MAX_NANOS, taskId);
+                //removed = removeWithSpin(SPIN_MAX_NANOS, taskId);
+                throw new IllegalStateException("Unable to remove " + taskId);
             }
     
             // checking what task has been completed, it it was reported as hang we
@@ -115,9 +115,8 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
                 if (onHangHandler != null)
                     onHangHandler.onEvent(task);
     
-                if (onUnHangHandler != null)
-                    hangMap.putIfAbsent(task.getId(), task);
-    
+                if (onUnHangHandler != null && !hangMap.containsKey(task.getId()))
+                    hangMap.put(task.getId(), task);
                 //
                 taskQueue.add(new TaskDelayed(task));
             } finally {
@@ -131,12 +130,4 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
         return new ThreadMonitor(this);
     }
 
-    private boolean removeWithSpin(long spinMax, Task task) {
-        long spinTill = System.nanoTime() + spinMax;
-        boolean consistent = false;
-        while (!(consistent = taskQueue.remove(task))
-                && spinTill > System.nanoTime())
-            ; // spin
-        return consistent;
-    }
 }

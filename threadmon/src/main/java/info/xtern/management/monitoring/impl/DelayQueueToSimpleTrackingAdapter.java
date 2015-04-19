@@ -11,12 +11,12 @@ import info.xtern.management.monitoring.UnHangEventHandler;
  * @author pereslegin pavel
  *
  */
-public class CurrentThreadSimpleTracking extends DelayQueueBasedTracker
+public class DelayQueueToSimpleTrackingAdapter extends DelayQueueBasedTracker
         implements SimpleTaskTracker {
 
     private final long baseDelayMillis;
 
-    public CurrentThreadSimpleTracking(long baseDelayMillis,
+    public DelayQueueToSimpleTrackingAdapter(long baseDelayMillis,
             HangEventHandler<TaskDelayed> hangHandler,
             UnHangEventHandler<TaskDelayed> unhangHandler) {
         super(hangHandler, unhangHandler);

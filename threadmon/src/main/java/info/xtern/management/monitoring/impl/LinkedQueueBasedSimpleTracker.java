@@ -20,7 +20,7 @@ import java.util.concurrent.locks.LockSupport;
  * @author pereslegin pavel
  *
  */
-public class FixedDelayConcurrentLinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>  {
+public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>  {
 
     private volatile Thread localThread;
     private final ConcurrentLinkedQueue<E> queue = new ConcurrentLinkedQueue<>();
@@ -33,7 +33,7 @@ public class FixedDelayConcurrentLinkedQueueBasedSimpleTracker<E extends Delayed
     
     private final PrototypeFactory<E> fact;
     
-    FixedDelayConcurrentLinkedQueueBasedSimpleTracker(HangEventHandler<E> hangHandler,
+    LinkedQueueBasedSimpleTracker(HangEventHandler<E> hangHandler,
             UnHangEventHandler<E> unhangHandler, PrototypeFactory<E> fact) {
         this.hangHandler = hangHandler;
         this.unhangHandler = unhangHandler;
@@ -53,9 +53,6 @@ public class FixedDelayConcurrentLinkedQueueBasedSimpleTracker<E extends Delayed
     public void remove(E t) {
         // spin forever
         while (!queue.remove(t)) ;
-//        {
-//            System.out.println("Critical error - unable to remove: " + t + " (queue.size = " + queue.size())");
-//        };
         
         if ((t = hangMap.remove(t.getId())) != null)
             unhangHandler.onEvent(t, hangMap.size());
@@ -65,7 +62,7 @@ public class FixedDelayConcurrentLinkedQueueBasedSimpleTracker<E extends Delayed
         Thread local = localThread = Thread.currentThread();
         E t;
         boolean event = false;
-        for (; !local.isInterrupted();) {
+        while (!local.isInterrupted()) {
 
             while ((t = queue.peek()) == null) {
                 LockSupport.park(local);
@@ -95,7 +92,7 @@ public class FixedDelayConcurrentLinkedQueueBasedSimpleTracker<E extends Delayed
 
             }
         }
-        if (Thread.interrupted())
-            throw new InterruptedException("handling interrupted");
+        if (Thread.interrupted()) // handling thread interruption
+            throw new InterruptedException("Thread was interrupted");
     }
 }

@@ -6,12 +6,18 @@ import info.xtern.management.monitoring.HangEventHandler;
 import info.xtern.management.monitoring.SimpleTaskTracker;
 import info.xtern.management.monitoring.TrackerControllerSync;
 import info.xtern.management.monitoring.UnHangEventHandler;
-
-public class CurrentThreadFixedDelayConcurrentTracking implements
+/**
+ * 
+ * @author pereslegin pavel
+ *
+ */
+public class NonBlockingSimpleTracking implements
         SimpleTaskTracker, TrackerControllerSync {
 
-    private final FixedDelayConcurrentLinkedQueueBasedSimpleTracker<TaskDelayed> trackingBase;
+    private final LinkedQueueBasedSimpleTracker<TaskDelayed> trackingBase;
 
+    private final long delay;
+    
     class Factory implements PrototypeFactory<TaskDelayed> {
 
         @Override
@@ -21,12 +27,10 @@ public class CurrentThreadFixedDelayConcurrentTracking implements
 
     }
 
-    private final long delay;
-
-    public CurrentThreadFixedDelayConcurrentTracking(long delay,
+    public NonBlockingSimpleTracking(long delay,
             HangEventHandler<TaskDelayed> hangHandler,
             UnHangEventHandler<TaskDelayed> unhangHandler) {
-        this.trackingBase = new FixedDelayConcurrentLinkedQueueBasedSimpleTracker<TaskDelayed>(
+        this.trackingBase = new LinkedQueueBasedSimpleTracker<TaskDelayed>(
                 hangHandler, unhangHandler, new Factory());
         this.delay = delay;
     }

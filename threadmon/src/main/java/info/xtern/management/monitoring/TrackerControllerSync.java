@@ -16,4 +16,4 @@ public interface TrackerControllerSync {
      *             if controller thread was interrupted
      */
     public void trackTasksSync() throws InterruptedException;
-};
+}
