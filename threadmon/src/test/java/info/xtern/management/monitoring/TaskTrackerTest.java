@@ -3,8 +3,8 @@ package info.xtern.management.monitoring;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import info.xtern.common.LifeCycle;
-import info.xtern.management.monitoring.impl.CurrentThreadFixedDelayConcurrentTracking;
-import info.xtern.management.monitoring.impl.CurrentThreadSimpleTracking;
+import info.xtern.management.monitoring.impl.NonBlockingSimpleTracking;
+import info.xtern.management.monitoring.impl.DelayQueueToSimpleTrackingAdapter;
 import info.xtern.management.monitoring.impl.TaskDelayed;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -142,7 +142,7 @@ public class TaskTrackerTest {
         AtomicInteger totalhangCounter = new AtomicInteger();
         
         int[] countersArray = new int[1000];
-        SimpleTaskTracker tracker = new CurrentThreadSimpleTracking(MAX_LIVE_TASK_INTERVAL, new HangHandler(
+        SimpleTaskTracker tracker = new DelayQueueToSimpleTrackingAdapter(MAX_LIVE_TASK_INTERVAL, new HangHandler(
                 totalhangCounter, countersArray), new UnHangHandler(
                 totalUnhangCounter, countersArray));
         testHangTaskTracking(tracker, countersArray, totalhangCounter, totalUnhangCounter);
@@ -154,7 +154,7 @@ public class TaskTrackerTest {
         AtomicInteger totalhangCounter = new AtomicInteger();
         
         int[] countersArray = new int[1000];
-        SimpleTaskTracker tracker = new CurrentThreadFixedDelayConcurrentTracking(
+        SimpleTaskTracker tracker = new NonBlockingSimpleTracking(
                 MAX_LIVE_TASK_INTERVAL, new HangHandler(totalhangCounter,
                         countersArray), new UnHangHandler(totalUnhangCounter,
                         countersArray));
