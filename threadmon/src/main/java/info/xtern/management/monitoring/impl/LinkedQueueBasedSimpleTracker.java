@@ -33,6 +33,8 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
     
     private final PrototypeFactory<E> fact;
     
+    private volatile boolean canRemove = true;
+    
     LinkedQueueBasedSimpleTracker(HangEventHandler<E> hangHandler,
             UnHangEventHandler<E> unhangHandler, PrototypeFactory<E> fact) {
         this.hangHandler = hangHandler;
@@ -54,6 +56,7 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
     
     public void remove(E t) {
         // spin forever
+        while (!canRemove);
         while (!queue.remove(t));
 
         if ((t = hangMap.remove(t.getId())) != null)
@@ -77,22 +80,27 @@ public class LinkedQueueBasedSimpleTracker<E extends Delayed & Identified<Long>>
             }
 
             if (t.getDelay(TimeUnit.NANOSECONDS) <= 0) { // spurious wake up test
-                if (queue.peek() == t) {
-                    if (queue.poll() != t) { // someone other was peeked - inconsistent state
-                        throw new IllegalStateException("State failed");
+                canRemove = false;
+                try {
+                    if (queue.peek() == t) {
+                        if (queue.poll() != t) { // someone other was peeked - inconsistent state
+                            throw new IllegalStateException("State failed");
+                        }
+                        event = true;
                     }
-                    event = true;
+                } finally {
+                    canRemove = true;
                 }
             }
             if (event) {
                 event = false;
+                // resubmit task
+                submit(fact.newInstance(t));
+
                 if (unhangHandler != null) {
                     hangMap.putIfAbsent(t.getId(), t);
                 }
                 hangHandler.onEvent(t);
-                // resubmit task
-                submit(fact.newInstance(t));
-
             }
         }
         if (Thread.interrupted()) // handling thread interruption
