@@ -1,7 +1,7 @@
 package info.xtern.management.monitoring;
 
 /**
- * Handles "unhang" event
+ * Handles event, when previously seemed hung task completed
  * 
  * @author pereslegin pavel
  *
@@ -10,12 +10,12 @@ package info.xtern.management.monitoring;
 public interface UnHangEventHandler<T> {
 
     /**
-     * Handles unhanged task (that was reported as "hanged" previously
+     * Handles event, when previously seemed hung task completed
      * 
      * @param task
-     *            unhanged task
+     *            task that previously was seemed hung 
      * @param leftHangCount
-     *            count of still hanged tasks (0 - no hanged tasks)
+     *            count of hung tasks (0 - no hung tasks)
      */
     public void onEvent(T task, int leftHangCount);
 

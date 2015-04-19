@@ -48,7 +48,7 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
     private final HangEventHandler<TaskDelayed> onHangHandler;
 
     /**
-     * Will be invoked when hanged task removed
+     * Will be invoked when hung task removed
      */
     private final UnHangEventHandler<TaskDelayed> onUnHangHandler;
 
@@ -58,7 +58,7 @@ public class DelayQueueBasedTracker implements TaskTracker<Thread>,
      * @param onHangHandler
      *            handler for timeout processing
      * @param onUnHangHandler
-     *            handler for reporting, that hanged task completed
+     *            handler for reporting, that hung task completed
      */
     public DelayQueueBasedTracker(HangEventHandler<TaskDelayed> onHangHandler,
             UnHangEventHandler<TaskDelayed> onUnHangHandler) {

@@ -53,7 +53,8 @@ public class ConcurrentDequeBasedSimpleTracker<E extends Delayed & Identified<Lo
     }
     
     public void remove(E t) {
-        // for a short time interval task
+        // for a short period of time task can be extracted by tracking-thread
+        // and not found until tracking-thread resubmit it
         while (!deque.remove(t));
 
         if ((t = hangMap.remove(t.getId())) != null)

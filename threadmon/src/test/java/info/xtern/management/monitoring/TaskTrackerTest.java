@@ -181,7 +181,7 @@ public class TaskTrackerTest {
         System.out.printf("Max time for executing task: %d ms%n%n", MAX_LIVE_TASK_INTERVAL);
         System.out.printf(" Normal task delay interval: %d ms%n", SHORT_LIVE_TASK_INTERVAL);
         System.out.printf("   Hang task delay interval: %d ms%n%n", HANG_LIVE_TASK_INTERVAL);
-        System.out.printf("Expected unhang count (removed earlier hanged tasks): %d(repeat count) x %d(threads count) = %d%n%n", MULTIPLIER, THREADS_COUNT, THREADS_COUNT * MULTIPLIER);
+        System.out.printf("Expected unhang count (removed hung tasks): %d(repeat count) x %d(threads count) = %d%n%n", MULTIPLIER, THREADS_COUNT, THREADS_COUNT * MULTIPLIER);
         System.out.printf("Expected hang count (tracker detected task's hanging): %d(hang interval / max interval) x %d(repeat count) x %d(threads count) = %d%n%n", HANG_MULTIPLIER, MULTIPLIER, THREADS_COUNT, HANG_MULTIPLIER * THREADS_COUNT * MULTIPLIER);
 
         
