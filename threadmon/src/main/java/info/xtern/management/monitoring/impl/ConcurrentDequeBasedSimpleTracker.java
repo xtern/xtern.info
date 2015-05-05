@@ -33,11 +33,15 @@ public class ConcurrentDequeBasedSimpleTracker<E extends Delayed & Identified<Lo
     
     private final PrototypeFactory<E> fact;
     
+    // TODO: dirty bug fix
+    private final long maxParkNanos;
+    
     ConcurrentDequeBasedSimpleTracker(HangEventHandler<E> hangHandler,
-            UnHangEventHandler<E> unhangHandler, PrototypeFactory<E> fact) {
+            UnHangEventHandler<E> unhangHandler, PrototypeFactory<E> fact, long maxDelay) {
         this.hangHandler = hangHandler;
         this.unhangHandler = unhangHandler;
         this.fact = fact;
+        this.maxParkNanos = TimeUnit.NANOSECONDS.convert(maxDelay, TimeUnit.MILLISECONDS);
     }
     
     public void submit(E t) {
@@ -69,8 +73,8 @@ public class ConcurrentDequeBasedSimpleTracker<E extends Delayed & Identified<Lo
         while (!local.isInterrupted()) {
 
             while ((t = deque.peek()) == null) {
-                // TODO: can never wake up 
-                LockSupport.park(local);
+                // TODO:  
+                LockSupport.parkNanos(maxParkNanos);
             }
             long timeout = t.getDelay(TimeUnit.NANOSECONDS);
             if (timeout > 0 && deque.peek() == t) {

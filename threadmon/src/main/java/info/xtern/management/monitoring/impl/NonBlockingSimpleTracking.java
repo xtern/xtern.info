@@ -31,7 +31,7 @@ public class NonBlockingSimpleTracking implements
             HangEventHandler<TaskDelayed> hangHandler,
             UnHangEventHandler<TaskDelayed> unhangHandler) {
         this.trackingBase = new ConcurrentDequeBasedSimpleTracker<TaskDelayed>(
-                hangHandler, unhangHandler, new Factory());
+                hangHandler, unhangHandler, new Factory(), delay);
         this.delay = delay;
     }
 
