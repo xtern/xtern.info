@@ -8,7 +8,6 @@ import info.xtern.common.PrototypeFactory;
 import info.xtern.management.monitoring.HangEventHandler;
 import info.xtern.management.monitoring.UnHangEventHandler;
 
-import java.lang.Thread.State;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
@@ -33,7 +32,7 @@ public class ConcurrentDequeBasedSimpleTracker<E extends Delayed & Identified<Lo
     
     private final PrototypeFactory<E> fact;
     
-    // TODO: dirty bug fix
+    // TODO: dirty fix
     private final long maxParkNanos;
     
     ConcurrentDequeBasedSimpleTracker(HangEventHandler<E> hangHandler,
@@ -51,9 +50,9 @@ public class ConcurrentDequeBasedSimpleTracker<E extends Delayed & Identified<Lo
         
         deque.offerLast(t);
         
-        if (th.getState() == State.WAITING) {
-            LockSupport.unpark(th);
-        }
+//        if (th.getState() == State.WAITING) {
+//            LockSupport.unpark(th);
+//        }
     }
     
     public void remove(E t) {
